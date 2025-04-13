@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db';
 import teamRoutes from './routes/teams';
+import teacherRoutes from './routes/teachers';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -22,6 +23,7 @@ connectDB()
 
 // Routes
 app.use('/api/teams', teamRoutes);
+app.use('/api/teachers', teacherRoutes);
 
 // Start server
 app.listen(PORT, () => {

@@ -1,36 +1,72 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
-import { useData } from "@/context/DataContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+interface Teacher {
+  _id: string;
+  name: string;
+}
 
 const TeacherList = () => {
-  const { teachers, addTeacher } = useData();
-  const [isAddTeacherOpen, setIsAddTeacherOpen] = useState(false);
-  const [newTeacherName, setNewTeacherName] = useState("");
-  const [newTeacherId, setNewTeacherId] = useState("");
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
+  const [newTeacherName, setNewTeacherName] = useState('');
 
-  const handleAddTeacher = () => {
-    if (newTeacherName && newTeacherId) {
-      addTeacher({
-        userId: newTeacherId,
-        name: newTeacherName,
-        panelIds: []
+  useEffect(() => {
+    fetchTeachers();
+  }, []);
+
+  const fetchTeachers = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/api/teachers');
+      const data = await response.json();
+      setTeachers(data);
+    } catch (error) {
+      toast.error('Failed to fetch teachers');
+    }
+  };
+
+  const handleAddTeacher = async () => {
+    if (!newTeacherName.trim()) {
+      toast.error('Please enter a teacher name');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3000/api/teachers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name: newTeacherName }),
       });
-      setNewTeacherName("");
-      setNewTeacherId("");
-      setIsAddTeacherOpen(false);
+
+      if (!response.ok) {
+        throw new Error('Failed to add teacher');
+      }
+
+      const addedTeacher = await response.json();
+      setTeachers([...teachers, addedTeacher]);
+      toast.success('Teacher added successfully');
+      setNewTeacherName('');
+    } catch (error) {
+      toast.error('Failed to add teacher');
     }
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Teachers</CardTitle>
-        <Dialog open={isAddTeacherOpen} onOpenChange={setIsAddTeacherOpen}>
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Teachers</h2>
+        <Dialog>
           <DialogTrigger asChild>
             <Button>Add Teacher</Button>
           </DialogTrigger>
@@ -38,60 +74,32 @@ const TeacherList = () => {
             <DialogHeader>
               <DialogTitle>Add New Teacher</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="teacher-name" className="text-right">
-                  Name
-                </Label>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Name</Label>
                 <Input
-                  id="teacher-name"
+                  id="name"
                   value={newTeacherName}
                   onChange={(e) => setNewTeacherName(e.target.value)}
-                  className="col-span-3"
+                  placeholder="Enter teacher name"
                 />
               </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="teacher-id" className="text-right">
-                  User ID
-                </Label>
-                <Input
-                  id="teacher-id"
-                  value={newTeacherId}
-                  onChange={(e) => setNewTeacherId(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
               <Button onClick={handleAddTeacher}>Add Teacher</Button>
-            </DialogFooter>
+            </div>
           </DialogContent>
         </Dialog>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {teachers.length === 0 ? (
-            <p className="text-center text-muted-foreground">No teachers found</p>
-          ) : (
-            <div className="grid gap-4">
-              {teachers.map((teacher) => (
-                <div
-                  key={teacher.id}
-                  className="flex items-center justify-between p-4 border rounded-md"
-                >
-                  <div>
-                    <h3 className="font-medium">{teacher.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Member of {teacher.panelIds.length} panels
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="grid gap-4">
+        {teachers.map((teacher) => (
+          <div
+            key={teacher._id}
+            className="p-4 border rounded-lg shadow-sm"
+          >
+            <h3 className="font-semibold">{teacher.name}</h3>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 };
 
