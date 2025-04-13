@@ -4,6 +4,7 @@ import cors from 'cors';
 import connectDB from './config/db';
 import teamRoutes from './routes/teams';
 import teacherRoutes from './routes/teachers';
+import panelRoutes from './routes/panels';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -24,6 +25,7 @@ connectDB()
 // Routes
 app.use('/api/teams', teamRoutes);
 app.use('/api/teachers', teacherRoutes);
+app.use('/api/panels', panelRoutes);
 
 // Start server
 app.listen(PORT, () => {
