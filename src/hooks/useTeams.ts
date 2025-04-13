@@ -1,32 +1,53 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { teamService } from '../lib/api/teamService';
-import { Team, CreateTeamDto, UpdateTeamScoreDto } from '../types/team';
+import { Team, CreateTeamDto } from '../types/team';
 
 export const useTeams = () => {
   const queryClient = useQueryClient();
 
   const { data: teams = [], isLoading, error } = useQuery<Team[]>({
     queryKey: ['teams'],
-    queryFn: teamService.getAllTeams,
-  });
-
-  const createTeamMutation = useMutation({
-    mutationFn: (teamData: CreateTeamDto) => teamService.createTeam(teamData),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['teams'] });
+    queryFn: async () => {
+      try {
+        console.log('Fetching teams from API...');
+        const result = await teamService.getAllTeams();
+        console.log('Teams fetched successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('Error fetching teams:', error);
+        throw error;
+      }
     },
   });
 
-  const updateTeamScoreMutation = useMutation({
-    mutationFn: ({ teamId, scoreData }: { teamId: string; scoreData: UpdateTeamScoreDto }) =>
-      teamService.updateTeamScore(teamId, scoreData),
+  const createTeamMutation = useMutation({
+    mutationFn: async (teamData: CreateTeamDto) => {
+      try {
+        console.log('Creating team with data:', teamData);
+        const result = await teamService.createTeam(teamData);
+        console.log('Team created successfully:', result);
+        return result;
+      } catch (error) {
+        console.error('Error creating team:', error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
     },
   });
 
   const deleteTeamMutation = useMutation({
-    mutationFn: (teamId: string) => teamService.deleteTeam(teamId),
+    mutationFn: async (teamId: string) => {
+      try {
+        console.log('Deleting team:', teamId);
+        await teamService.deleteTeam(teamId);
+        console.log('Team deleted successfully');
+      } catch (error) {
+        console.error('Error deleting team:', error);
+        throw error;
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teams'] });
     },
@@ -37,10 +58,8 @@ export const useTeams = () => {
     isLoading,
     error,
     createTeam: createTeamMutation.mutate,
-    updateTeamScore: updateTeamScoreMutation.mutate,
     deleteTeam: deleteTeamMutation.mutate,
     isCreating: createTeamMutation.isPending,
-    isUpdating: updateTeamScoreMutation.isPending,
     isDeleting: deleteTeamMutation.isPending,
   };
 }; 

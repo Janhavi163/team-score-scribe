@@ -1,16 +1,34 @@
 import { Schema, model, Document } from 'mongoose';
 
-interface IPlayer {
+interface ITeamMember {
   name: string;
-  position: string;
+  sapId: string;
+  class: string;
 }
 
 interface ITeam extends Document {
   name: string;
-  players: IPlayer[];
-  score: number;
+  members: ITeamMember[];
   createdAt: Date;
 }
+
+const teamMemberSchema = new Schema<ITeamMember>({
+  name: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  sapId: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  class: {
+    type: String,
+    required: true,
+    trim: true
+  }
+});
 
 const teamSchema = new Schema<ITeam>({
   name: {
@@ -18,22 +36,7 @@ const teamSchema = new Schema<ITeam>({
     required: true,
     trim: true
   },
-  players: [{
-    name: {
-      type: String,
-      required: true,
-      trim: true
-    },
-    position: {
-      type: String,
-      required: true,
-      trim: true
-    }
-  }],
-  score: {
-    type: Number,
-    default: 0
-  },
+  members: [teamMemberSchema],
   createdAt: {
     type: Date,
     default: Date.now

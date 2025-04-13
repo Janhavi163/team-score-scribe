@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -34,6 +33,13 @@ const Dashboard = () => {
           <p className="text-muted-foreground">
             Register your IPD team of 4 students. All team members must be registered.
           </p>
+          
+          <div className="flex space-x-4 mb-6">
+            <Button onClick={() => navigate("/teams")}>
+              View All Teams
+            </Button>
+          </div>
+          
           <TeamRegistrationForm />
         </div>
       </Layout>
@@ -48,6 +54,12 @@ const Dashboard = () => {
           <p className="text-muted-foreground">
             Manage teachers, create panels, and assign teams to panels.
           </p>
+          
+          <div className="flex space-x-4 mb-6">
+            <Button onClick={() => navigate("/teams")}>
+              View All Teams
+            </Button>
+          </div>
           
           <Tabs defaultValue="teachers" className="w-full">
             <TabsList className="grid grid-cols-3 w-full max-w-md">
@@ -78,6 +90,13 @@ const Dashboard = () => {
           <p className="text-muted-foreground">
             View your assigned panels and evaluate teams.
           </p>
+          
+          <div className="flex space-x-4 mb-6">
+            <Button onClick={() => navigate("/teams")}>
+              View All Teams
+            </Button>
+          </div>
+          
           <PanelDetails />
         </div>
       </Layout>
@@ -100,7 +119,7 @@ const Dashboard = () => {
             </p>
           </CardContent>
           <CardFooter>
-            <Button className="w-full" onClick={() => navigate("/login")}>
+            <Button onClick={() => navigate("/login")} className="w-full">
               Go to Login
             </Button>
           </CardFooter>

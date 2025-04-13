@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTeams } from "@/hooks/useTeams";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,8 +17,9 @@ interface TeamMember {
 
 const TeamRegistrationForm = () => {
   const navigate = useNavigate();
-  const { addStudent, addTeam } = useData();
+  const { addStudent } = useData();
   const { userId, currentUser } = useAuth();
+  const { createTeam } = useTeams();
   
   const [teamName, setTeamName] = useState("");
   const [members, setMembers] = useState<TeamMember[]>([
@@ -69,11 +70,14 @@ const TeamRegistrationForm = () => {
       });
 
       // Create team with these students
-      const teamId = addTeam({
+      createTeam({
         name: teamName,
-        panelId: null,
-        mentorId: null
-      }, studentIds);
+        members: members.map(member => ({
+          name: member.name,
+          sapId: member.sapId,
+          class: member.className
+        }))
+      });
 
       toast.success("Team registered successfully!");
       navigate('/dashboard');

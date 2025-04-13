@@ -1,6 +1,6 @@
-import { Team, CreateTeamDto, UpdateTeamScoreDto } from '../../types/team';
+import { Team, CreateTeamDto } from '../../types/team';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 export const teamService = {
   async getAllTeams(): Promise<Team[]> {
@@ -21,20 +21,6 @@ export const teamService = {
     });
     if (!response.ok) {
       throw new Error('Failed to create team');
-    }
-    return response.json();
-  },
-
-  async updateTeamScore(teamId: string, scoreData: UpdateTeamScoreDto): Promise<Team> {
-    const response = await fetch(`${API_BASE_URL}/teams/${teamId}/score`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(scoreData),
-    });
-    if (!response.ok) {
-      throw new Error('Failed to update team score');
     }
     return response.json();
   },
