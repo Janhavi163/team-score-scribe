@@ -1,4 +1,3 @@
-
 export type UserRole = "student" | "admin" | "teacher";
 
 export interface User {
@@ -51,4 +50,5 @@ export interface Mark {
   teacherId: string;
   criteriaId: string;
   value: number;
+  termwork: "termwork1" | "termwork2";
 }

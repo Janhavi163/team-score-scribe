@@ -1,4 +1,3 @@
-
 import { User, Team, Student, Teacher, Panel, RubricCriteria, Mark } from '../types';
 
 // Mock data for users
@@ -44,11 +43,10 @@ export const panels: Panel[] = [
 
 // Mock data for rubric criteria
 export const rubricCriteria: RubricCriteria[] = [
-  { id: "rc1", name: "Technical Implementation", maxMarks: 10 },
-  { id: "rc2", name: "Design and UI/UX", maxMarks: 10 },
-  { id: "rc3", name: "Project Management", maxMarks: 10 },
-  { id: "rc4", name: "Innovation", maxMarks: 10 },
-  { id: "rc5", name: "Presentation", maxMarks: 10 },
+  { id: "rc1", name: "Proposed Methodology", maxMarks: 4 },
+  { id: "rc2", name: "Implementation", maxMarks: 15 },
+  { id: "rc3", name: "Presentation Quality", maxMarks: 3 },
+  { id: "rc4", name: "Contribution as a Team Member and Punctuality", maxMarks: 3 },
 ];
 
 // Mock data for marks
