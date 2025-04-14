@@ -1,176 +1,322 @@
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
-import { useState } from "react";
-import { useData } from "@/context/DataContext";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+interface Member {
+  name: string;
+  sapId: string;
+  class: string;
+  _id: string;
+}
 
-const TeamAssignment = () => {
-  const { teams, panels, teachers, assignTeamToPanel, assignMentorToTeam } = useData();
-  
-  const [selectedTeam, setSelectedTeam] = useState<string>("");
-  const [selectedPanel, setSelectedPanel] = useState<string>("");
-  const [selectedMentor, setSelectedMentor] = useState<string>("");
+interface Team {
+  _id: string;
+  teamName: string;
+  member1: Member;
+  member2: Member;
+  member3: Member;
+  member4: Member;
+  panel?: {
+    _id: string;
+    name: string;
+  };
+  mentor?: {
+    _id: string;
+    name: string;
+  };
+  reviewer1?: {
+    _id: string;
+    name: string;
+  };
+  reviewer2?: {
+    _id: string;
+    name: string;
+  };
+}
 
-  const handleAssignTeamToPanel = () => {
-    if (!selectedTeam || !selectedPanel) {
-      toast.error("Please select both a team and a panel");
+interface Panel {
+  _id: string;
+  name: string;
+  teachers: Array<{
+    _id: string;
+    name: string;
+  }>;
+}
+
+const API_BASE_URL = 'http://localhost:3000';
+
+export default function TeamAssignment() {
+  const navigate = useNavigate();
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [panels, setPanels] = useState<Panel[]>([]);
+  const [selectedTeam, setSelectedTeam] = useState<Team | null>(null);
+  const [selectedPanel, setSelectedPanel] = useState<string>('');
+  const [selectedMentor, setSelectedMentor] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchTeams();
+    fetchPanels();
+  }, []);
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    };
+  };
+
+  const fetchTeams = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/teams`, {
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+      
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Teams API Error Response:', errorText);
+        throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Teams data:', data);
+      setTeams(data);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      toast.error('Failed to fetch teams. Please check if the server is running.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchPanels = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/api/panels`, {
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+      
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Panels API Error Response:', errorText);
+        throw new Error(`Failed to fetch panels: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Panels data:', data);
+      setPanels(data);
+    } catch (error) {
+      console.error('Error fetching panels:', error);
+      toast.error('Failed to fetch panels. Please check if the server is running.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAssignPanel = async () => {
+    if (!selectedTeam || !selectedPanel || !selectedMentor) {
+      toast.error('Please select a team, panel, and mentor');
       return;
     }
 
-    assignTeamToPanel(selectedTeam, selectedPanel);
-    setSelectedTeam("");
-    setSelectedPanel("");
-    toast.success("Team assigned to panel successfully!");
-  };
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/teams/${selectedTeam._id}/assign`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        credentials: 'include',
+        body: JSON.stringify({
+          panelId: selectedPanel,
+          mentorId: selectedMentor,
+        }),
+      });
 
-  const handleAssignMentor = () => {
-    if (!selectedTeam || !selectedMentor) {
-      toast.error("Please select both a team and a mentor");
-      return;
+      if (response.status === 401) {
+        navigate('/login');
+        return;
+      }
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to assign panel');
+      }
+
+      const updatedTeam = await response.json();
+      setTeams(teams.map(team => 
+        team._id === updatedTeam._id ? updatedTeam : team
+      ));
+      
+      toast.success('Panel assigned successfully');
+      setSelectedTeam(null);
+      setSelectedPanel('');
+      setSelectedMentor('');
+    } catch (error) {
+      console.error('Error assigning panel:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to assign panel');
     }
-
-    assignMentorToTeam(selectedTeam, selectedMentor);
-    setSelectedTeam("");
-    setSelectedMentor("");
-    toast.success("Mentor assigned to team successfully!");
   };
 
-  // Filter unassigned teams (teams without a panel)
-  const unassignedTeams = teams.filter(team => !team.panelId);
-  
-  // Filter unmentored teams (teams without a mentor)
-  const unmentoredTeams = teams.filter(team => !team.mentorId);
+  const getPanelTeachers = (panelId: string) => {
+    const panel = panels.find(p => p._id === panelId);
+    return panel?.teachers || [];
+  };
 
   return (
-    <div className="space-y-8">
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Assign Team to Panel</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="team-select">Select Team</Label>
-              <Select
-                value={selectedTeam}
-                onValueChange={setSelectedTeam}
-              >
-                <SelectTrigger id="team-select">
-                  <SelectValue placeholder="Select a team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unassignedTeams.length === 0 ? (
-                    <SelectItem value="none" disabled>No unassigned teams</SelectItem>
-                  ) : (
-                    unassignedTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Team Assignments</h2>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button disabled={isLoading}>Assign Panel</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Assign Panel to Team</DialogTitle>
+              <DialogDescription>
+                Select a team, panel, and mentor to assign them together.
+              </DialogDescription>
+            </DialogHeader>
+            {isLoading ? (
+              <div className="flex justify-center items-center p-4">
+                <p>Loading data...</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Select Team</Label>
+                  <Select
+                    value={selectedTeam?._id || ''}
+                    onValueChange={(value) => {
+                      const team = teams.find(t => t._id === value);
+                      setSelectedTeam(team || null);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a team" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {teams.map(team => (
+                        <SelectItem key={team._id} value={team._id}>
+                          {team.teamName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Select Panel</Label>
+                  <Select
+                    value={selectedPanel}
+                    onValueChange={setSelectedPanel}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a panel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {panels.map(panel => (
+                        <SelectItem key={panel._id} value={panel._id}>
+                          {panel.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {selectedPanel && (
+                  <div className="space-y-2">
+                    <Label>Select Mentor</Label>
+                    <Select
+                      value={selectedMentor}
+                      onValueChange={setSelectedMentor}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a mentor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {getPanelTeachers(selectedPanel).map(teacher => (
+                          <SelectItem key={teacher._id} value={teacher._id}>
+                            {teacher.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <Button 
+                  onClick={handleAssignPanel}
+                  disabled={!selectedTeam || !selectedPanel || !selectedMentor}
+                >
+                  Assign Panel
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center p-4">
+          <p>Loading teams and panels...</p>
+        </div>
+      ) : (
+        <div className="grid gap-4">
+          {teams.map(team => (
+            <div key={team._id} className="border rounded-lg p-4">
+              <h3 className="font-semibold">{team.teamName}</h3>
+              <div className="mt-2">
+                <p className="text-sm text-gray-500">Members:</p>
+                <ul className="list-disc list-inside">
+                  {team.member1 && <li>{team.member1.name} ({team.member1.sapId})</li>}
+                  {team.member2 && <li>{team.member2.name} ({team.member2.sapId})</li>}
+                  {team.member3 && <li>{team.member3.name} ({team.member3.sapId})</li>}
+                  {team.member4 && <li>{team.member4.name} ({team.member4.sapId})</li>}
+                </ul>
+              </div>
+              {team.panel && (
+                <div className="mt-2">
+                  <p className="text-sm text-gray-500">Panel: {team.panel.name}</p>
+                  {team.mentor && <p className="text-sm text-gray-500">Mentor: {team.mentor.name}</p>}
+                  {team.reviewer1 && <p className="text-sm text-gray-500">Reviewer 1: {team.reviewer1.name}</p>}
+                  {team.reviewer2 && <p className="text-sm text-gray-500">Reviewer 2: {team.reviewer2.name}</p>}
+                </div>
+              )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="panel-select">Select Panel</Label>
-              <Select
-                value={selectedPanel}
-                onValueChange={setSelectedPanel}
-              >
-                <SelectTrigger id="panel-select">
-                  <SelectValue placeholder="Select a panel" />
-                </SelectTrigger>
-                <SelectContent>
-                  {panels.length === 0 ? (
-                    <SelectItem value="none" disabled>No panels created</SelectItem>
-                  ) : (
-                    panels.map((panel) => (
-                      <SelectItem key={panel.id} value={panel.id}>
-                        {panel.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              onClick={handleAssignTeamToPanel} 
-              disabled={!selectedTeam || !selectedPanel}
-            >
-              Assign Team to Panel
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle>Assign Mentor to Team</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="team-mentor-select">Select Team</Label>
-              <Select
-                value={selectedTeam}
-                onValueChange={setSelectedTeam}
-              >
-                <SelectTrigger id="team-mentor-select">
-                  <SelectValue placeholder="Select a team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unmentoredTeams.length === 0 ? (
-                    <SelectItem value="none" disabled>No unmentored teams</SelectItem>
-                  ) : (
-                    unmentoredTeams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="mentor-select">Select Mentor</Label>
-              <Select
-                value={selectedMentor}
-                onValueChange={setSelectedMentor}
-              >
-                <SelectTrigger id="mentor-select">
-                  <SelectValue placeholder="Select a mentor" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.length === 0 ? (
-                    <SelectItem value="none" disabled>No teachers available</SelectItem>
-                  ) : (
-                    teachers.map((teacher) => (
-                      <SelectItem key={teacher.id} value={teacher.id}>
-                        {teacher.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <Button 
-              onClick={handleAssignMentor} 
-              disabled={!selectedTeam || !selectedMentor}
-            >
-              Assign Mentor
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
-};
-
-export default TeamAssignment;
+}

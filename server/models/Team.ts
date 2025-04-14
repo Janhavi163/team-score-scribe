@@ -1,46 +1,35 @@
-import { Schema, model, Document } from 'mongoose';
+import mongoose from 'mongoose';
 
-interface ITeamMember {
-  name: string;
-  sapId: string;
-  class: string;
-}
-
-interface ITeam extends Document {
-  name: string;
-  members: ITeamMember[];
-  createdAt: Date;
-}
-
-const teamMemberSchema = new Schema<ITeamMember>({
+const teamSchema = new mongoose.Schema({
   name: {
     type: String,
     required: true,
-    trim: true
   },
-  sapId: {
-    type: String,
-    required: true,
-    trim: true
+  members: [{
+    name: String,
+    rollNo: String,
+    email: String,
+  }],
+  panel: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Panel',
   },
-  class: {
-    type: String,
-    required: true,
-    trim: true
-  }
-});
-
-const teamSchema = new Schema<ITeam>({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+  mentor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher',
   },
-  members: [teamMemberSchema],
+  reviewer1: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher',
+  },
+  reviewer2: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Teacher',
+  },
   createdAt: {
     type: Date,
-    default: Date.now
-  }
+    default: Date.now,
+  },
 });
 
-export const Team = model<ITeam>('Team', teamSchema); 
+export default mongoose.model('Team', teamSchema); 
