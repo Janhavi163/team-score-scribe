@@ -28,11 +28,8 @@ interface Member {
 
 interface Team {
   _id: string;
-  teamName: string;
-  member1: Member;
-  member2: Member;
-  member3: Member;
-  member4: Member;
+  name: string;
+  members: Member[];
   panel?: {
     _id: string;
     name: string;
@@ -70,10 +67,12 @@ export default function TeamAssignment() {
   const [selectedPanel, setSelectedPanel] = useState<string>('');
   const [selectedMentor, setSelectedMentor] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [loadingCount, setLoadingCount] = useState(0);
 
   useEffect(() => {
-    fetchTeams();
-    fetchPanels();
+    console.log("Fetching teams and panels...");
+    fetchTeamsInternal();
+    fetchPanelsInternal();
   }, []);
 
   const getAuthHeaders = () => {
@@ -83,6 +82,80 @@ export default function TeamAssignment() {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+  };
+
+  const incrementLoading = () => setLoadingCount(count => count + 1);
+  const decrementLoading = () => setLoadingCount(count => Math.max(0, count - 1));
+
+  useEffect(() => {
+    setIsLoading(loadingCount > 0);
+  }, [loadingCount]);
+
+  const fetchTeamsInternal = async () => {
+    try {
+      incrementLoading();
+      const response = await fetch(`${API_BASE_URL}/api/teams`, {
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+      
+      console.log("Teams API response status:", response.status);
+
+      if (response.status === 401) {
+        navigate('/login');
+        decrementLoading();
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Teams API Error Response:', errorText);
+        throw new Error(`Failed to fetch teams: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Teams data:', data);
+      console.log('Teams data JSON:', JSON.stringify(data, null, 2));
+      setTeams(data);
+    } catch (error) {
+      console.error('Error fetching teams:', error);
+      toast.error('Failed to fetch teams. Please check if the server is running.');
+    } finally {
+      decrementLoading();
+    }
+  };
+
+  const fetchPanelsInternal = async () => {
+    try {
+      incrementLoading();
+      const response = await fetch(`${API_BASE_URL}/api/panels`, {
+        credentials: 'include',
+        headers: getAuthHeaders(),
+      });
+      
+      console.log("Panels API response status:", response.status);
+
+      if (response.status === 401) {
+        navigate('/login');
+        decrementLoading();
+        return;
+      }
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Panels API Error Response:', errorText);
+        throw new Error(`Failed to fetch panels: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      console.log('Panels data:', data);
+      setPanels(data);
+    } catch (error) {
+      console.error('Error fetching panels:', error);
+      toast.error('Failed to fetch panels. Please check if the server is running.');
+    } finally {
+      decrementLoading();
+    }
   };
 
   const fetchTeams = async () => {
@@ -228,7 +301,7 @@ export default function TeamAssignment() {
                     <SelectContent>
                       {teams.map(team => (
                         <SelectItem key={team._id} value={team._id}>
-                          {team.teamName}
+                          {team.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -295,14 +368,13 @@ export default function TeamAssignment() {
         <div className="grid gap-4">
           {teams.map(team => (
             <div key={team._id} className="border rounded-lg p-4">
-              <h3 className="font-semibold">{team.teamName}</h3>
+              <h3 className="font-semibold">{team.name}</h3>
               <div className="mt-2">
                 <p className="text-sm text-gray-500">Members:</p>
                 <ul className="list-disc list-inside">
-                  {team.member1 && <li>{team.member1.name} ({team.member1.sapId})</li>}
-                  {team.member2 && <li>{team.member2.name} ({team.member2.sapId})</li>}
-                  {team.member3 && <li>{team.member3.name} ({team.member3.sapId})</li>}
-                  {team.member4 && <li>{team.member4.name} ({team.member4.sapId})</li>}
+                  {team.members && team.members.map(member => (
+                    <li key={member._id}>{member.name}</li>
+                  ))}
                 </ul>
               </div>
               {team.panel && (

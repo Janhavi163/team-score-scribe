@@ -1,15 +1,20 @@
 import mongoose from 'mongoose';
 
+const memberSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  sapId: { type: String, required: true },
+  class: { type: String, required: true },
+}, { _id: true });
+
 const teamSchema = new mongoose.Schema({
-  name: {
+  teamName: {
     type: String,
     required: true,
   },
-  members: [{
-    name: String,
-    rollNo: String,
-    email: String,
-  }],
+  member1: { type: memberSchema, required: true },
+  member2: { type: memberSchema, required: true },
+  member3: { type: memberSchema, required: true },
+  member4: { type: memberSchema, required: true },
   panel: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Panel',

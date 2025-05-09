@@ -10,8 +10,13 @@ const PanelDetails = () => {
   const { teachers, panels, teams } = useData();
   const navigate = useNavigate();
 
+  console.log("Teachers:", teachers);
+  console.log("Panels:", panels);
+  console.log("Teams:", teams);
+
   // Find the current teacher
   const currentTeacher = teachers.find(teacher => teacher.id === userId);
+  console.log("Current Teacher:", currentTeacher);
   
   if (!currentTeacher) {
     return (
@@ -32,11 +37,13 @@ const PanelDetails = () => {
   const teacherPanels = panels.filter(panel => 
     panel.teacherIds.includes(currentTeacher.id)
   );
+  console.log("Teacher Panels:", teacherPanels);
 
   // Get all teams assigned to these panels
   const assignedTeams = teams.filter(team => 
-    teacherPanels.some(panel => panel.teamIds.includes(team.id))
+    teacherPanels.some(panel => panel.teamIds.includes(team._id))
   );
+  console.log("Assigned Teams:", assignedTeams);
 
   return (
     <Card className="w-full">
@@ -87,7 +94,7 @@ const PanelDetails = () => {
                   ) : (
                     <div className="space-y-2">
                       {panel.teamIds.map(teamId => {
-                        const team = teams.find(t => t.id === teamId);
+                        const team = teams.find(t => t._id === teamId);
                         return team ? (
                           <div key={teamId} className="border p-3 rounded-md">
                             <div className="flex justify-between items-center">
