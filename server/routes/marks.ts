@@ -44,32 +44,31 @@ router.post('/', (async (req, res) => {
   try {
     const { teamId, teacherId, criteriaId, value, termwork } = req.body;
     
+    console.log('Received mark submission:', { teamId, teacherId, criteriaId, value, termwork });
+    
     if (!teamId || !teacherId || !criteriaId || value === undefined || !termwork) {
+      console.log('Missing required fields:', { teamId, teacherId, criteriaId, value, termwork });
       return res.status(400).json({ message: 'All fields are required' });
     }
     
     // Check if the team exists
     const team = await Team.findById(teamId);
+    console.log('Found team:', team);
+    
     if (!team) {
+      console.log('Team not found for ID:', teamId);
       return res.status(404).json({ message: 'Team not found' });
-    }
-    
-    // Check if the teacher is assigned to this team (as mentor or reviewer)
-    const isMentor = team.mentor && team.mentor.toString() === teacherId;
-    const isReviewer1 = team.reviewer1 && team.reviewer1.toString() === teacherId;
-    const isReviewer2 = team.reviewer2 && team.reviewer2.toString() === teacherId;
-    
-    if (!isMentor && !isReviewer1 && !isReviewer2) {
-      return res.status(403).json({ message: 'Teacher is not assigned to this team' });
     }
     
     // Try to find an existing mark
     const existingMark = await Mark.findOne({ teamId, teacherId, criteriaId, termwork });
+    console.log('Existing mark:', existingMark);
     
     if (existingMark) {
       // Update the existing mark
       existingMark.value = value;
       await existingMark.save();
+      console.log('Updated existing mark:', existingMark);
       res.json(existingMark);
     } else {
       // Create a new mark
@@ -81,11 +80,12 @@ router.post('/', (async (req, res) => {
         termwork
       });
       await newMark.save();
+      console.log('Created new mark:', newMark);
       res.status(201).json(newMark);
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error saving mark:', error);
-    res.status(400).json({ message: 'Error saving mark' });
+    res.status(500).json({ message: 'Error saving mark', error: error.message });
   }
 }) as RequestHandler);
 
