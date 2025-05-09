@@ -1,12 +1,11 @@
-
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import Layout from "@/components/layout/Layout";
-import RubricForm from "@/components/teacher/RubricForm";
 import { useData } from "@/context/DataContext";
 
 const EvaluateTeam = () => {
   const { teamId } = useParams<{ teamId: string }>();
   const { teams } = useData();
+  const navigate = useNavigate();
   
   const team = teams.find(t => t.id === teamId);
   
@@ -39,8 +38,15 @@ const EvaluateTeam = () => {
   return (
     <Layout>
       <div className="space-y-8">
-        <h1 className="text-3xl font-bold">Evaluate Team</h1>
-        <RubricForm />
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Evaluate Team: {team.name}</h1>
+          <button
+            onClick={() => navigate(`/rubric-form/${teamId}`)}
+            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Evaluate Team
+          </button>
+        </div>
       </div>
     </Layout>
   );

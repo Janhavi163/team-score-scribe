@@ -16,7 +16,7 @@ import 'jspdf-autotable';
 import { getTeamMarks, getTeamAverageMarks } from '@/lib/api/markService';
 
 const Teams = () => {
-  const { teams, isLoading, error, createTeam, deleteTeam, isCreating, isDeleting } = useTeams();
+  const { teams, isLoading, error, refetch, createTeam, deleteTeam, isCreating, isDeleting } = useTeams();
   const { userRole } = useAuth();
   const navigate = useNavigate();
   const [teamName, setTeamName] = useState("");
@@ -205,10 +205,15 @@ const Teams = () => {
       <div className="container mx-auto py-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Teams</h1>
-          <Button onClick={handleExportToPDF} className="flex items-center gap-2">
-            <Download className="w-4 h-4" />
-            Export to PDF
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={() => refetch()} disabled={isLoading}>
+              View All Teams
+            </Button>
+            <Button onClick={handleExportToPDF} className="flex items-center gap-2">
+              <Download className="w-4 h-4" />
+              Export to PDF
+            </Button>
+          </div>
         </div>
 
         {/* Create Team Form */}
@@ -303,11 +308,13 @@ const Teams = () => {
                   <TableRow key={team._id}>
                     <TableCell>{team.name}</TableCell>
                     <TableCell>
-                      {team.members.map((member, index) => (
+                      {Array.isArray(team.members) ? team.members.map((member, index) => (
                         <div key={index}>
                           {member.name} ({member.sapId}) - {member.class}
                         </div>
-                      ))}
+                      )) : (
+                        <div>No members assigned</div>
+                      )}
                     </TableCell>
                     <TableCell>{team.panel?.name || "Not Assigned"}</TableCell>
                     <TableCell>{team.mentor?.name || "Not Assigned"}</TableCell>

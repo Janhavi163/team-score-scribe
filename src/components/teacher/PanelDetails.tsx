@@ -1,13 +1,13 @@
-
 import { useData } from "@/context/DataContext";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
 
 const PanelDetails = () => {
   const { userId } = useAuth();
-  const { teachers, panels, teams } = useData();
+  const { teachers, panels, teams, getTeacherMarksForTeam } = useData();
   const navigate = useNavigate();
 
   console.log("Teachers:", teachers);
@@ -48,7 +48,7 @@ const PanelDetails = () => {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle>Your Panel Information</CardTitle>
+        <CardTitle>Your Assigned Teams</CardTitle>
         <CardDescription>
           Teams assigned to your panels for evaluation
         </CardDescription>
@@ -95,21 +95,36 @@ const PanelDetails = () => {
                     <div className="space-y-2">
                       {panel.teamIds.map(teamId => {
                         const team = teams.find(t => t._id === teamId);
+                        const teacherMarks = getTeacherMarksForTeam(teamId, currentTeacher.id);
+                        const hasMarks = teacherMarks.length > 0;
+                        
                         return team ? (
                           <div key={teamId} className="border p-3 rounded-md">
                             <div className="flex justify-between items-center">
-                              <span className="font-medium">{team.name}</span>
+                              <div>
+                                <span className="font-medium">{team.name}</span>
+                                <div className="flex gap-2 mt-1">
+                                  <Badge variant={hasMarks ? "success" : "secondary"}>
+                                    {hasMarks ? "Evaluated" : "Not Evaluated"}
+                                  </Badge>
+                                  <Badge variant="outline">
+                                    {team.members.length} members
+                                  </Badge>
+                                </div>
+                              </div>
                               <Button
-                                variant="outline"
+                                variant="default"
                                 size="sm"
-                                onClick={() => navigate(`/evaluate-team/${teamId}`)}
+                                onClick={() => navigate(`/rubric-form/${teamId}`)}
                               >
-                                Evaluate
+                                {hasMarks ? "Update Evaluation" : "Evaluate Team"}
                               </Button>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {team.members.length} members
-                            </p>
+                            {hasMarks && (
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                Last evaluated: {new Date(teacherMarks[0].timestamp).toLocaleDateString()}
+                              </div>
+                            )}
                           </div>
                         ) : null;
                       })}

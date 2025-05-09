@@ -269,95 +269,100 @@ export default function TeamAssignment() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Team Assignments</h2>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button disabled={isLoading}>Assign Panel</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Assign Panel to Team</DialogTitle>
-              <DialogDescription>
-                Select a team, panel, and mentor to assign them together.
-              </DialogDescription>
-            </DialogHeader>
-            {isLoading ? (
-              <div className="flex justify-center items-center p-4">
-                <p>Loading data...</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Select Team</Label>
-                  <Select
-                    value={selectedTeam?._id || ''}
-                    onValueChange={(value) => {
-                      const team = teams.find(t => t._id === value);
-                      setSelectedTeam(team || null);
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a team" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map(team => (
-                        <SelectItem key={team._id} value={team._id}>
-                          {team.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        <div className="flex space-x-2">
+          <Button onClick={fetchTeams} disabled={isLoading}>
+            View Teams
+          </Button>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button disabled={isLoading}>Assign Panel</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Assign Panel to Team</DialogTitle>
+                <DialogDescription>
+                  Select a team, panel, and mentor to assign them together.
+                </DialogDescription>
+              </DialogHeader>
+              {isLoading ? (
+                <div className="flex justify-center items-center p-4">
+                  <p>Loading data...</p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label>Select Panel</Label>
-                  <Select
-                    value={selectedPanel}
-                    onValueChange={setSelectedPanel}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a panel" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {panels.map(panel => (
-                        <SelectItem key={panel._id} value={panel._id}>
-                          {panel.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedPanel && (
+              ) : (
+                <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Select Mentor</Label>
+                    <Label>Select Team</Label>
                     <Select
-                      value={selectedMentor}
-                      onValueChange={setSelectedMentor}
+                      value={selectedTeam?._id || ''}
+                      onValueChange={(value) => {
+                        const team = teams.find(t => t._id === value);
+                        setSelectedTeam(team || null);
+                      }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a mentor" />
+                        <SelectValue placeholder="Select a team" />
                       </SelectTrigger>
                       <SelectContent>
-                        {getPanelTeachers(selectedPanel).map(teacher => (
-                          <SelectItem key={teacher._id} value={teacher._id}>
-                            {teacher.name}
+                        {teams.map(team => (
+                          <SelectItem key={team._id} value={team._id}>
+                            {team.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                )}
 
-                <Button 
-                  onClick={handleAssignPanel}
-                  disabled={!selectedTeam || !selectedPanel || !selectedMentor}
-                >
-                  Assign Panel
-                </Button>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
+                  <div className="space-y-2">
+                    <Label>Select Panel</Label>
+                    <Select
+                      value={selectedPanel}
+                      onValueChange={setSelectedPanel}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a panel" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {panels.map(panel => (
+                          <SelectItem key={panel._id} value={panel._id}>
+                            {panel.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {selectedPanel && (
+                    <div className="space-y-2">
+                      <Label>Select Mentor</Label>
+                      <Select
+                        value={selectedMentor}
+                        onValueChange={setSelectedMentor}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a mentor" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getPanelTeachers(selectedPanel).map(teacher => (
+                            <SelectItem key={teacher._id} value={teacher._id}>
+                              {teacher.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <Button 
+                    onClick={handleAssignPanel}
+                    disabled={!selectedTeam || !selectedPanel || !selectedMentor}
+                  >
+                    Assign Panel
+                  </Button>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

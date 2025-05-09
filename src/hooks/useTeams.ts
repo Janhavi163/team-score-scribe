@@ -5,7 +5,7 @@ import { Team, CreateTeamDto } from '../types/team';
 export const useTeams = () => {
   const queryClient = useQueryClient();
 
-  const { data: teams = [], isLoading, error } = useQuery<Team[]>({
+  const { data: teams = [], isLoading, error, refetch } = useQuery<Team[]>({
     queryKey: ['teams'],
     queryFn: async () => {
       try {
@@ -57,6 +57,7 @@ export const useTeams = () => {
     teams,
     isLoading,
     error,
+    refetch,
     createTeam: createTeamMutation.mutate,
     deleteTeam: deleteTeamMutation.mutate,
     isCreating: createTeamMutation.isPending,

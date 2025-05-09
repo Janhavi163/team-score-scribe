@@ -88,7 +88,7 @@ const Dashboard = () => {
         <div className="space-y-8">
           <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
           <p className="text-muted-foreground">
-            View your assigned panels and evaluate teams.
+            Manage your assigned teams and evaluate their performance.
           </p>
           
           <div className="flex space-x-4 mb-6">
@@ -96,8 +96,18 @@ const Dashboard = () => {
               View All Teams
             </Button>
           </div>
-          
-          <PanelDetails />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Your Assigned Teams</CardTitle>
+              <CardDescription>
+                Click on a team to evaluate their performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PanelDetails />
+            </CardContent>
+          </Card>
         </div>
       </Layout>
     );
