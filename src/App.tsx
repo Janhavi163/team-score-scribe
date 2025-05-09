@@ -13,7 +13,7 @@ import EvaluateTeam from "./pages/EvaluateTeam";
 import Teams from "./pages/Teams";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
-import RubricFormPage from "./pages/RubricFormPage";
+import RubricForm from "@/components/teacher/RubricForm";
 
 const queryClient = new QueryClient();
 
@@ -44,19 +44,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route 
-                path="/evaluate-team/:teamId" 
-                element={
-                  <ProtectedRoute allowedRoles={["teacher"]}>
-                    <EvaluateTeam />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="/rubric-form/:teamId" element={
-                <ProtectedRoute allowedRoles={["teacher"]}>
-                  <RubricFormPage />
-                </ProtectedRoute>
-              } />
+              <Route path="/evaluate-team" element={<EvaluateTeam />} />
+              <Route path="/RubricForm/:teamId" element={<RubricForm />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

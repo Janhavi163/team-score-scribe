@@ -24,7 +24,7 @@ interface ExtendedTeam extends Team {
 const RubricForm = () => {
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
-  const { rubricCriteria, teams, getTeacherMarksForTeam, addMark, teachers, calculateTeamTotalMarks } = useData();
+  const { rubricCriteria, getTeacherMarksForTeam, addMark, teachers, calculateTeamTotalMarks } = useData();
   const { userId } = useAuth();
 
   const [marks, setMarks] = useState<{ [key: string]: { [key: string]: number } }>({
@@ -42,138 +42,192 @@ const RubricForm = () => {
   const [isMentor, setIsMentor] = useState<boolean>(false);
   const [isReviewer, setIsReviewer] = useState<boolean>(false);
   const [userRole, setUserRole] = useState<"guide" | "reviewer1" | "reviewer2" | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!teamId || !userId) return;
+    const fetchTeam = async () => {
+      if (!teamId || !userId) return;
 
-    // Find the team
-    const foundTeam = teams.find(t => t._id === teamId) as ExtendedTeam;
-    if (foundTeam) {
-      setTeam(foundTeam);
+      try {
+        setIsLoading(true);
+        const response = await fetch(`http://localhost:3000/api/teams/${teamId}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const foundTeam = await response.json();
+        console.log("Fetched team:", foundTeam);
+        
+        if (foundTeam) {
+          setTeam(foundTeam);
 
-      // Check if the current user is the mentor/guide
-      // Convert ObjectId to string for comparison
-      const mentorIdStr = foundTeam.mentor ? foundTeam.mentor.toString() : null;
-      const reviewer1IdStr = foundTeam.reviewer1 ? foundTeam.reviewer1.toString() : null;
-      const reviewer2IdStr = foundTeam.reviewer2 ? foundTeam.reviewer2.toString() : null;
-      const userIdStr = userId ? userId.toString() : null;
+          // Check if the current user is the mentor/guide
+          const mentorIdStr = foundTeam.mentor ? foundTeam.mentor.toString() : null;
+          const reviewer1IdStr = foundTeam.reviewer1 ? foundTeam.reviewer1.toString() : null;
+          const reviewer2IdStr = foundTeam.reviewer2 ? foundTeam.reviewer2.toString() : null;
+          const userIdStr = userId ? userId.toString() : null;
 
-      const isUserMentor = mentorIdStr === userIdStr;
-      setIsMentor(isUserMentor);
+          const isUserMentor = mentorIdStr === userIdStr;
+          setIsMentor(isUserMentor);
 
-      // Check if the current user is a reviewer
-      const isUserReviewer1 = reviewer1IdStr === userIdStr;
-      const isUserReviewer2 = reviewer2IdStr === userIdStr;
-      setIsReviewer(isUserReviewer1 || isUserReviewer2);
+          // Check if the current user is a reviewer
+          const isUserReviewer1 = reviewer1IdStr === userIdStr;
+          const isUserReviewer2 = reviewer2IdStr === userIdStr;
+          setIsReviewer(isUserReviewer1 || isUserReviewer2);
 
-      // Set the user's role
-      if (isUserMentor) {
-        setUserRole("guide");
-      } else if (isUserReviewer1) {
-        setUserRole("reviewer1");
-      } else if (isUserReviewer2) {
-        setUserRole("reviewer2");
+          // Set the user's role
+          if (isUserMentor) {
+            setUserRole("guide");
+          } else if (isUserReviewer1) {
+            setUserRole("reviewer1");
+          } else if (isUserReviewer2) {
+            setUserRole("reviewer2");
+          }
+
+          // Load marks
+          await loadMarks(foundTeam);
+        } else {
+          setError("Team not found");
+        }
+      } catch (err) {
+        console.error("Error fetching team:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch team");
+      } finally {
+        setIsLoading(false);
       }
+    };
 
-      // Load marks for both termworks
-      const loadMarks = async () => {
-        try {
-          // Get marks for termwork1
-          const termwork1Marks = await getTeamMarks(teamId);
-          const termwork1FilteredMarks = termwork1Marks.filter(mark => mark.termwork === 'termwork1');
-          setExistingMarks(termwork1FilteredMarks);
+    const loadMarks = async (foundTeam: ExtendedTeam) => {
+      try {
+        // Get marks for termwork1
+        const termwork1Marks = await getTeamMarks(teamId!);
+        const termwork1FilteredMarks = termwork1Marks.filter(mark => mark.termwork === 'termwork1');
+        setExistingMarks(termwork1FilteredMarks);
 
-      // Initialize marks state from existing marks
-      const initialMarks: { [criteriaId: string]: number } = {};
-          termwork1FilteredMarks.forEach(mark => {
-        initialMarks[mark.criteriaId] = mark.value;
-      });
-          setMarks(prev => ({
-            ...prev,
-            termwork1: initialMarks
-          }));
+        // Initialize marks state from existing marks
+        const initialMarks: { [criteriaId: string]: number } = {};
+        termwork1FilteredMarks.forEach(mark => {
+          initialMarks[mark.criteriaId] = mark.value;
+        });
+        setMarks(prev => ({
+          ...prev,
+          termwork1: initialMarks
+        }));
 
-          // Get marks for termwork2
-          const termwork2Marks = await getTeamMarks(teamId);
-          const termwork2FilteredMarks = termwork2Marks.filter(mark => mark.termwork === 'termwork2');
-          
-          // Initialize marks state from existing marks for termwork2
-          const initialMarks2: { [criteriaId: string]: number } = {};
-          termwork2FilteredMarks.forEach(mark => {
-            initialMarks2[mark.criteriaId] = mark.value;
-          });
-          setMarks(prev => ({
-            ...prev,
-            termwork2: initialMarks2
-          }));
+        // Get marks for termwork2
+        const termwork2Marks = await getTeamMarks(teamId!);
+        const termwork2FilteredMarks = termwork2Marks.filter(mark => mark.termwork === 'termwork2');
+        
+        // Initialize marks state from existing marks for termwork2
+        const initialMarks2: { [criteriaId: string]: number } = {};
+        termwork2FilteredMarks.forEach(mark => {
+          initialMarks2[mark.criteriaId] = mark.value;
+        });
+        setMarks(prev => ({
+          ...prev,
+          termwork2: initialMarks2
+        }));
 
-      // Get marks from all teachers in the panel
+        // Get marks from all teachers in the panel
         const allMarks: { [teacherId: string]: { [criteriaId: string]: number } } = {};
         
-          // Get mentor's marks
-          if (foundTeam.mentorId) {
-            const mentorMarks = await getTeacherMarksForTeam(teamId, foundTeam.mentorId);
-            const mentorMarksMap: { [criteriaId: string]: number } = {};
-            
-            mentorMarks.forEach(mark => {
-              mentorMarksMap[mark.criteriaId] = mark.value;
-            });
-            
-            allMarks[foundTeam.mentorId] = mentorMarksMap;
-          }
+        // Get mentor's marks
+        if (foundTeam.mentor) {
+          const mentorMarks = await getTeacherMarksForTeam(teamId!, foundTeam.mentor);
+          const mentorMarksMap: { [criteriaId: string]: number } = {};
           
-          // Get reviewer1's marks
-          if (foundTeam.reviewer1) {
-            const reviewer1Marks = await getTeacherMarksForTeam(teamId, foundTeam.reviewer1);
-            const reviewer1MarksMap: { [criteriaId: string]: number } = {};
-            
-            reviewer1Marks.forEach(mark => {
-              reviewer1MarksMap[mark.criteriaId] = mark.value;
-            });
-            
-            allMarks[foundTeam.reviewer1] = reviewer1MarksMap;
-          }
-          
-          // Get reviewer2's marks
-          if (foundTeam.reviewer2) {
-            const reviewer2Marks = await getTeacherMarksForTeam(teamId, foundTeam.reviewer2);
-            const reviewer2MarksMap: { [criteriaId: string]: number } = {};
-            
-            reviewer2Marks.forEach(mark => {
-              reviewer2MarksMap[mark.criteriaId] = mark.value;
-            });
-            
-            allMarks[foundTeam.reviewer2] = reviewer2MarksMap;
-          }
-          
-          setAllTeacherMarks(allMarks);
-
-          // Calculate average marks for both termworks
-          const [termwork1Averages, termwork2Averages] = await Promise.all([
-            getTeamAverageMarks(teamId, 'termwork1'),
-            getTeamAverageMarks(teamId, 'termwork2')
-          ]);
-          
-          setAverages({
-            termwork1: termwork1Averages,
-            termwork2: termwork2Averages
+          mentorMarks.forEach(mark => {
+            mentorMarksMap[mark.criteriaId] = mark.value;
           });
-
-      // Calculate total mark
-          const totalSum = Object.values(termwork1Averages).reduce((sum, value) => sum + value, 0);
-          const avgTotal = Object.values(termwork1Averages).length > 0 
-            ? totalSum / Object.values(termwork1Averages).length 
-        : 0;
-      setTotalMark(avgTotal);
-        } catch (error) {
-          console.error("Error loading marks:", error);
-          toast.error("Failed to load marks");
+          
+          allMarks[foundTeam.mentor] = mentorMarksMap;
         }
-      };
+        
+        // Get reviewer1's marks
+        if (foundTeam.reviewer1) {
+          const reviewer1Marks = await getTeacherMarksForTeam(teamId!, foundTeam.reviewer1);
+          const reviewer1MarksMap: { [criteriaId: string]: number } = {};
+          
+          reviewer1Marks.forEach(mark => {
+            reviewer1MarksMap[mark.criteriaId] = mark.value;
+          });
+          
+          allMarks[foundTeam.reviewer1] = reviewer1MarksMap;
+        }
+        
+        // Get reviewer2's marks
+        if (foundTeam.reviewer2) {
+          const reviewer2Marks = await getTeacherMarksForTeam(teamId!, foundTeam.reviewer2);
+          const reviewer2MarksMap: { [criteriaId: string]: number } = {};
+          
+          reviewer2Marks.forEach(mark => {
+            reviewer2MarksMap[mark.criteriaId] = mark.value;
+          });
+          
+          allMarks[foundTeam.reviewer2] = reviewer2MarksMap;
+        }
+        
+        setAllTeacherMarks(allMarks);
 
-      loadMarks();
-    }
-  }, [teamId, teams, getTeacherMarksForTeam, userId, teachers, calculateTeamTotalMarks]);
+        // Calculate average marks for both termworks
+        const [termwork1Averages, termwork2Averages] = await Promise.all([
+          getTeamAverageMarks(teamId!, 'termwork1'),
+          getTeamAverageMarks(teamId!, 'termwork2')
+        ]);
+        
+        setAverages({
+          termwork1: termwork1Averages,
+          termwork2: termwork2Averages
+        });
+
+        // Calculate total mark
+        const totalSum = Object.values(termwork1Averages).reduce((sum, value) => sum + value, 0);
+        const avgTotal = Object.values(termwork1Averages).length > 0 
+          ? totalSum / Object.values(termwork1Averages).length 
+          : 0;
+        setTotalMark(avgTotal);
+      } catch (error) {
+        console.error("Error loading marks:", error);
+        toast.error("Failed to load marks");
+      }
+    };
+
+    fetchTeam();
+  }, [teamId, userId, getTeacherMarksForTeam, teachers, calculateTeamTotalMarks]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p className="text-lg">Loading team data...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>Team not found</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   const handleMarkChange = (criteriaId: string, value: number, termwork: 'termwork1' | 'termwork2') => {
     const criteria = rubricCriteria.find(c => c.id === criteriaId);
@@ -201,18 +255,20 @@ const RubricForm = () => {
       return;
     }
     
-    // Validate ObjectId format (24 hex characters)
+    // Validate teamId format (24 hex characters)
     const objectIdRegex = /^[0-9a-fA-F]{24}$/;
     if (!objectIdRegex.test(teamId)) {
       toast.error("Invalid teamId format");
       console.error("Invalid teamId format:", teamId);
       return;
     }
-    if (!objectIdRegex.test(userId)) {
-      toast.error("Invalid userId format");
-      console.error("Invalid userId format:", userId);
-      return;
-    }
+
+    // Remove userId validation since we're using string IDs
+    // if (!objectIdRegex.test(userId)) {
+    //   toast.error("Invalid userId format");
+    //   console.error("Invalid userId format:", userId);
+    //   return;
+    // }
     
     // Check if all criteria have marks for the specific termwork
     const hasAllMarks = Object.keys(marks[termwork]).every(criterionId => 
@@ -339,25 +395,6 @@ const RubricForm = () => {
     // Save the PDF
     doc.save(`${team.name.replace(/\s+/g, '_')}_evaluation.pdf`);
   };
-
-  if (!team) {
-    return <div>Team not found</div>;
-  }
-
-  {/* Removed access control check to allow all users to access the form for testing */}
-  {/* if (!isMentor && !isReviewer) {
-    return (
-      <div className="container mx-auto py-6 px-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            You do not have permission to evaluate this team. Only the assigned guide or reviewers can evaluate this team.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  } */}
 
   return (
     <div className="container mx-auto py-6 px-4">
